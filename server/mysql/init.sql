@@ -1,0 +1,21 @@
+CREATE TABLE IF NOT EXISTS matches (
+  id INT PRIMARY KEY,
+  match_date DATE NOT NULL,
+  stadium VARCHAR(255) NOT NULL,
+  home_team_id VARCHAR(10) NOT NULL,
+  home_team_name VARCHAR(50) NOT NULL,
+  home_team_short VARCHAR(10) NOT NULL,
+  away_team_id VARCHAR(10) NOT NULL,
+  away_team_name VARCHAR(50) NOT NULL,
+  away_team_short VARCHAR(10) NOT NULL,
+  home_score INT NOT NULL,
+  away_score INT NOT NULL,
+  possession_home INT NOT NULL,
+  possession_away INT NOT NULL,
+  shots_home INT NOT NULL,
+  shots_away INT NOT NULL,
+  sot_home INT NOT NULL,
+  sot_away INT NOT NULL,
+  corners_home INT NOT NULL,
+  corners_away INT NOT NULL
+);

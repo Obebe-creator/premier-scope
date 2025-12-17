@@ -1,0 +1,32 @@
+services:
+  db:
+    image: mysql:8.0
+    container_name: premierscope-db
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpass
+      MYSQL_DATABASE: premierscope
+      MYSQL_USER: app
+      MYSQL_PASSWORD: apppass
+    ports:
+      - "3307:3306"
+    volumes:
+      - dbdata:/var/lib/mysql
+      - ./mysql/init.sql:/docker-entrypoint-initdb.d/01_init.sql:ro
+      - ./mysql/seed.sql:/docker-entrypoint-initdb.d/02_seed.sql:ro
+
+  api:
+    build: ./php
+    container_name: premierscope-api
+    environment:
+      DB_HOST: db
+      DB_NAME: premierscope
+      DB_USER: app
+      DB_PASS: apppass
+      APP_ENV: dev
+    ports:
+      - "8080:80"
+    depends_on:
+      - db
+
+volumes:
+  dbdata:

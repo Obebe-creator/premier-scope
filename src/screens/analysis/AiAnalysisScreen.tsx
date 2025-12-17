@@ -1,62 +1,61 @@
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Text, View } from "react-native";
+
 import { RootStackParamList } from "../../app/navigation/RootNavigator";
-import { getMatchById } from "../../utils/dummyMatches";
+import { useApp } from "../../app/providers/AppProvider";
+import { Card } from "../../components/common/Card";
+
+import { fetchAnalysis } from "../../api/analysis.api";
 
 type Props = NativeStackScreenProps<RootStackParamList, "AiAnalysis">;
 
 export function AiAnalysisScreen({ route }: Props) {
+  const { theme, ms } = useApp();
   const matchId = route.params?.matchId ?? 1;
-  const match = getMatchById(matchId);
 
   const [loading, setLoading] = useState(true);
-
-  const analysisText = useMemo(() => {
-    if (!match) return "Match not found.";
-
-    const { stats } = match;
-    const homeBetterSot = stats.shotsOnTargetHome > stats.shotsOnTargetAway;
-    const homeMorePoss = stats.possessionHome > stats.possessionAway;
-
-    return [
-      `Result: ${match.homeTeam.shortName} ${match.homeScore}-${match.awayScore} ${match.awayTeam.shortName}`,
-      "",
-      `Key points:`,
-      `- ${homeMorePoss ? match.homeTeam.shortName : match.awayTeam.shortName} controlled possession (${stats.possessionHome}%-${stats.possessionAway}%).`,
-      `- ${homeBetterSot ? match.homeTeam.shortName : match.awayTeam.shortName} created more threat on target (${stats.shotsOnTargetHome}-${stats.shotsOnTargetAway}).`,
-      `- Corners (${stats.cornersHome}-${stats.cornersAway}) suggest set-piece pressure mattered.`,
-      "",
-      `AI summary: The match was decided by efficiency in key moments rather than raw volume. The side that converted chances and managed transitions better took the advantage.`,
-    ].join("\n");
-  }, [match]);
+  const [text, setText] = useState<string>("");
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const t = setTimeout(() => setLoading(false), 700); // 서버 호출 느낌만
-    return () => clearTimeout(t);
-  }, []);
+    let alive = true;
+
+    setLoading(true);
+    fetchAnalysis(matchId)
+      .then((res) => {
+        if (!alive) return;
+        setText(res.text);
+        setError(null);
+      })
+      .catch((e) => {
+        if (!alive) return;
+        setError(e?.message ?? "Failed to generate analysis");
+      })
+      .finally(() => {
+        if (!alive) return;
+        setLoading(false);
+      });
+
+    return () => {
+      alive = false;
+    };
+  }, [matchId]);
 
   return (
-    <View style={{ flex: 1, padding: 16 }}>
-      <Text style={{ fontSize: 22, fontWeight: "800", marginBottom: 12 }}>
+    <View style={{ flex: 1, backgroundColor: theme.bg, padding: ms(16) }}>
+      <Text style={{ fontSize: ms(22), fontWeight: "800", marginBottom: ms(12), color: theme.text }}>
         AI Analysis
       </Text>
 
       {loading ? (
-        <Text style={{ opacity: 0.7 }}>Generating analysis...</Text>
+        <Text style={{ opacity: 0.7, color: theme.text }}>Generating analysis...</Text>
+      ) : error ? (
+        <Text style={{ opacity: 0.7, color: theme.text }}>{error}</Text>
       ) : (
-        <View
-          style={{
-            borderWidth: 1,
-            borderColor: "#ddd",
-            borderRadius: 12,
-            padding: 14,
-          }}
-        >
-<Text style={{ lineHeight: 20 }}>
-  {analysisText}
-</Text>
-        </View>
+        <Card>
+          <Text style={{ lineHeight: ms(20), color: theme.text }}>{text}</Text>
+        </Card>
       )}
     </View>
   );
